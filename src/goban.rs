@@ -165,25 +165,24 @@ fn get_player_input(prompt : &str) -> i32 {
     my_string.parse::<i32>().unwrap()
 }
 
-fn main() {
-  let mut board = Board::new();
-  let mut next_player = Black;
-
-  loop {
-      println!("{:?} to play", next_player);
-      let x = get_player_input("x ");
-      let y = get_player_input("y ");
-      match board.play_stone(Position {x, y}, next_player) {
-        Ok(()) => {
-          board.display_board();
-          next_player = other_player(next_player);
-        }
-        Err(msg) => {
-          println!("Illegal move: {}", msg);
-        }
-      }
-  }
+//fn main() {
+//  let mut board = Board::new();
+//  let mut next_player = Black;
+//
+//  loop {
+//      println!("{:?} to play", next_player);
+//      let x = get_player_input("x ");
+//      let y = get_player_input("y ");
+//      match board.play_stone(Position {x, y}, next_player) {
+//        Ok(()) => {
+//          board.display_board();
+//          next_player = other_player(next_player);
+//        }
+//        Err(msg) => {
+//          println!("Illegal move: {}", msg);
+//        }
+//      }
+//  }
 //  println!("{:?}", board);
 //  println!("{:?}", has_liberties(&board, Position{x: 2, y: 1}));
-  
-}
+//}
