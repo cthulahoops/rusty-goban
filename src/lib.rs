@@ -1,6 +1,8 @@
 mod utils;
+mod goban;
 
 use wasm_bindgen::prelude::*;
+use goban::Board;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -14,6 +16,6 @@ extern {
 }
 
 #[wasm_bindgen]
-pub fn greet() {
+pub fn yell() {
     alert("Hello, rusty-goban!");
 }

@@ -5,13 +5,17 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::{stdin,stdout,Write};
 
+use wasm_bindgen::prelude::*;
+
 const GRID_SIZE : i32 = 13;
 
+#[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Stone {
+pub enum Stone {
     Black,
     White,
 }
+
 use Stone::*;
 
 #[derive(PartialEq, Hash, Eq, Debug, Clone, Copy)]
@@ -20,14 +24,20 @@ struct Position {
     y: i32,
 }
 
-struct Board {
-  map: HashMap<Position, Stone>
+#[wasm_bindgen]
+pub struct Board {
+  map: HashMap<Position, Stone>,
+  pub size: i32,
+  pub next_player: Stone
 }
 
+#[wasm_bindgen]
 impl Board {
-  fn new() -> Self {
+  pub fn new(size : i32) -> Self {
     Board {
-      map: HashMap::new()
+      map: HashMap::new(),
+      size,
+      next_player: Black,
     }
   }
 
