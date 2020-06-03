@@ -1,6 +1,5 @@
-//import * as wasm from "wasm-game-of-life";
+import * as wasm from "wasm-game-of-life";
 
-//wasm.greet();
 const CELL_SIZE = 35; // px
 const BOARD_COLOR = "#ddb34e";
 const GRID_COLOR = "#333333";
@@ -8,6 +7,9 @@ const WHITE = "#FFFFFF";
 const BLACK = "#000000";
 
 const board_size = 19;
+
+let board = wasm.Board.new(board_size);
+console.log(board.size);
 
 const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)
