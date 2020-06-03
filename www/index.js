@@ -13,12 +13,28 @@ const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)
 };
 
+const uncell_transform = (pos) => {
+  return Math.round(pos / (CELL_SIZE + 1))
+};
+
 const canvas = document.getElementById("goban");
 canvas.height = cell_transform(board_size + 1);
 canvas.width = cell_transform(board_size + 1);
 
 const ctx = canvas.getContext('2d');
 
+
+const doMouseMove = (e) => {
+  drawBoard();
+  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), BLACK + "aa");
+}
+
+const doMouseDown = (e) => {
+  console.log("Placed at: ", uncell_transform(e.offsetX), uncell_transform(e.offsetY));
+}
+
+canvas.addEventListener("mousemove", doMouseMove);
+canvas.addEventListener("mousedown", doMouseDown);
 
 const drawGrid = () => {
   ctx.beginPath();
@@ -42,6 +58,7 @@ const drawGrid = () => {
   ctx.stroke();
 };
 
+
 const drawDot = (x, y) => {
   ctx.beginPath();
   ctx.fillStyle = GRID_COLOR; 
@@ -55,7 +72,7 @@ const drawDot = (x, y) => {
   ctx.fill();
 }
 
-const drawBoard = () => {
+const drawStarPoints = () => {
   if (board_size === 9) {
     drawDot(3,3);
     drawDot(5,5);
@@ -94,10 +111,14 @@ const drawStone = (x, y, color) => {
   ctx.fill();
 }
 
-drawGrid();
+const drawBoard = () => {
+  drawGrid();
+  drawStarPoints();
+  drawStone(3,4, BLACK);
+  drawStone(5,3, WHITE);
+  drawStone(7,3, BLACK);
+  drawStone(5,5, WHITE);
+  drawStone(4,6, BLACK);
+}
+
 drawBoard();
-drawStone(3,4, BLACK);
-drawStone(5,3, WHITE);
-drawStone(7,3, BLACK);
-drawStone(5,5, WHITE);
-drawStone(4,6, BLACK);
