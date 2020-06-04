@@ -105,6 +105,7 @@ name = "rusty-goban"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
+ "js-sys",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "wee_alloc",

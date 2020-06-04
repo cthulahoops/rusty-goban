@@ -117,11 +117,7 @@ const drawStone = (x, y, color) => {
 const drawBoard = () => {
   drawGrid();
   drawStarPoints();
-  drawStone(3,4, BLACK);
-  drawStone(5,3, WHITE);
-  drawStone(7,3, BLACK);
-  drawStone(5,5, WHITE);
-  drawStone(4,6, BLACK);
+  board.draw_js_board(drawStone);
 }
 
 drawBoard();

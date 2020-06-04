@@ -4,8 +4,10 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::{stdin,stdout,Write};
+extern crate js_sys;
 
 use wasm_bindgen::prelude::*;
+
 
 const GRID_SIZE : i32 = 13;
 
@@ -115,6 +117,21 @@ impl Board {
           return Err("Illegal move - no liberties".to_string());
       }
       Ok(())
+  }
+
+  pub fn draw_js_board(&self, f : &js_sys::Function) -> () {
+    for (key, val) in self.map.iter() {
+      let this = JsValue::NULL;
+      let color = match val {
+        White => "#FFFFFF",
+        Black => "#000000",
+      };
+      f.call3(
+        &this, 
+        &JsValue::from(key.x), 
+        &JsValue::from(key.y), 
+        &JsValue::from(color)).unwrap();
+    }
   }
 
   fn display_board(&self) {
