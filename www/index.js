@@ -10,6 +10,7 @@ const board_size = 19;
 
 let board = wasm.Board.new(board_size);
 console.log(board.size);
+console.log(board.get_position());
 
 const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)

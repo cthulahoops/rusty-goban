@@ -18,8 +18,9 @@ pub enum Stone {
 
 use Stone::*;
 
+#[wasm_bindgen]
 #[derive(PartialEq, Hash, Eq, Debug, Clone, Copy)]
-struct Position {
+pub struct Position {
     x: i32,
     y: i32,
 }
@@ -41,6 +42,10 @@ impl Board {
     }
   }
 
+  pub fn get_position(&self) -> Position {
+    Position{x: 1, y: 2}
+  }
+  
   fn has_liberties(&self, position: Position) -> bool {
     let player = self.map.get(&position).unwrap();
     let mut visited : HashSet<Position> = HashSet::new();
@@ -82,15 +87,15 @@ impl Board {
     }
   }
 
-  fn play_stone(&mut self, position : Position, stone : Stone) -> Result<(), &str> {
+  fn play_stone(&mut self, position : Position, stone : Stone) -> Result<(), String> {
       // Check for ko!
 
       if !is_on_board(&position) {
-        return Err("Play on the board");
+        return Err("Play on the board".to_string());
       }
 
       if self.map.contains_key(&position) {
-        return Err("Already occupied.");
+        return Err("Already occupied.".to_string());
       }
       
       self.map.insert(position, stone);
@@ -107,7 +112,7 @@ impl Board {
       } 
       if !self.has_liberties(position) {
           self.map.remove(&position);
-          return Err("Illegal move - no liberties");
+          return Err("Illegal move - no liberties".to_string());
       }
       Ok(())
   }
