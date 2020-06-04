@@ -1,0 +1,11 @@
+* Publishing / hosting
+* Centering / aesthetics
+* Ko
+* Passing
+* Scoring
+* Online multiplayer.
+* Feedback for illegal moves.
+* Select board size.
+* Clean-up of javascript.
+* Clean up of rust.
+  * Splitting pure rust / js interface code.
