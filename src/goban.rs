@@ -9,8 +9,6 @@ extern crate js_sys;
 use wasm_bindgen::prelude::*;
 
 
-const GRID_SIZE : i32 = 13;
-
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stone {
@@ -54,7 +52,7 @@ impl Board {
     let mut queue = vec![position];
       
     while let Some(next) = queue.pop() {
-      for adj_position in adjacent(next) {
+      for adj_position in self.adjacent(next) {
         if visited.contains(&adj_position) {
           continue;
         } else {
@@ -82,18 +80,31 @@ impl Board {
 
   fn remove_group(&mut self, position : Position) -> () {
     let origin_stone = self.map.remove(&position).unwrap();
-    for adj_position in adjacent(position) {
+    for adj_position in self.adjacent(position) {
       if self.has_stone(adj_position, origin_stone) {
         self.remove_group(adj_position);
       }
     }
   }
 
-  fn play_stone(&mut self, position : Position, stone : Stone) -> Result<(), String> {
+  pub fn next_player_js(&self) -> JsValue {
+    let color = match self.next_player {
+      White => "#FFFFFF",
+      Black => "#000000",
+    };
+    JsValue::from(color)
+  }
+
+  pub fn play_stone_js(&mut self, x : i32, y: i32) -> Result<(), JsValue> {
+    self.play_stone(Position { x, y }).map_err(JsValue::from)
+  }
+
+  fn play_stone(&mut self, position : Position) -> Result<(), String> {
+    let stone = self.next_player;
       // Check for ko!
 
-      if !is_on_board(&position) {
-        return Err("Play on the board".to_string());
+      if !self.is_on_board(&position) {
+        return Err(format!("Play on the board {:?})", position).to_string());
       }
 
       if self.map.contains_key(&position) {
@@ -102,7 +113,7 @@ impl Board {
       
       self.map.insert(position, stone);
   
-      for adj_position in adjacent(position) {
+      for adj_position in self.adjacent(position) {
           if self.has_stone(adj_position, other_player(stone)) {
               println!("{:?}", adj_position);
               if !self.has_liberties(adj_position) {
@@ -116,6 +127,8 @@ impl Board {
           self.map.remove(&position);
           return Err("Illegal move - no liberties".to_string());
       }
+
+      self.next_player = other_player(self.next_player);
       Ok(())
   }
 
@@ -134,25 +147,42 @@ impl Board {
     }
   }
 
-  fn display_board(&self) {
-    print!("   ");
-    for x in 0..GRID_SIZE {
-      print!("{}", x % 10);
-    }
-    println!("");
-    for y in 0..GRID_SIZE {
-      print!("{:02} ", y);
-      for x in 0..GRID_SIZE {
-        let s = match self.map.get(&Position{x: x, y: y}) {
-          Some(Stone::Black) => "X",
-          Some(Stone::White) => "O",
-          None => ".",
-        };
-        print!("{}", s);
-      }
-      println!("");
-    }
-    println!("");
+  // fn display_board(&self) {
+  //   print!("   ");
+  //   for x in 0..GRID_SIZE {
+  //     print!("{}", x % 10);
+  //   }
+  //   println!("");
+  //   for y in 0..GRID_SIZE {
+  //     print!("{:02} ", y);
+  //     for x in 0..GRID_SIZE {
+  //       let s = match self.map.get(&Position{x: x, y: y}) {
+  //         Some(Stone::Black) => "X",
+  //         Some(Stone::White) => "O",
+  //         None => ".",
+  //       };
+  //       print!("{}", s);
+  //     }
+  //     println!("");
+  //   }
+  //   println!("");
+  // }
+
+  fn is_on_board(&self, pos: &Position) -> bool {
+    self.size >= pos.x && pos.x >= 1 && self.size >= pos.y && 1 <= pos.y
+  }
+
+  fn adjacent (&self, position : Position) -> Vec<Position> {
+    let adj_positions = vec! [
+      Position {x: position.x + 1, y: position.y},
+      Position {x: position.x - 1, y: position.y},
+      Position {x: position.x, y: position.y + 1},
+      Position {x: position.x, y: position.y - 1},
+    ];
+    adj_positions
+      .into_iter()
+      .filter(|x| self.is_on_board(x))
+      .collect()
   }
 }
 
@@ -161,23 +191,6 @@ fn other_player(stone: Stone) -> Stone {
     Black => White,
     White => Black,
   }
-}
-
-fn is_on_board(pos: &Position) -> bool {
-  GRID_SIZE > pos.x && pos.x >= 0 && GRID_SIZE > pos.y && 0 <= pos.y
-}
-
-fn adjacent ( position : Position) -> Vec<Position> {
-  let adj_positions = vec! [
-    Position {x: position.x + 1, y: position.y},
-    Position {x: position.x - 1, y: position.y},
-    Position {x: position.x, y: position.y + 1},
-    Position {x: position.x, y: position.y - 1},
-  ];
-  adj_positions
-    .into_iter()
-    .filter(is_on_board)
-    .collect()
 }
 
 

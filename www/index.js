@@ -29,11 +29,14 @@ const ctx = canvas.getContext('2d');
 
 const doMouseMove = (e) => {
   drawBoard();
-  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), BLACK + "aa");
+  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player_js() + "aa");
 }
 
 const doMouseDown = (e) => {
-  console.log("Placed at: ", uncell_transform(e.offsetX), uncell_transform(e.offsetY));
+  const x = uncell_transform(e.offsetX);
+  const y = uncell_transform(e.offsetY);
+  console.log("Placed at: ", x, y);
+  board.play_stone_js(x, y);
 }
 
 canvas.addEventListener("mousemove", doMouseMove);
