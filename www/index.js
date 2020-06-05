@@ -126,9 +126,9 @@ const drawStone = (x, y, color) => {
   const y_shad = y_pos + STONE_SIZE * 0.2;
 
   var shadow_gradient = ctx.createRadialGradient(x_shad, y_shad, 0, x_shad, y_shad, 1.1 * STONE_SIZE);
-  shadow_gradient.addColorStop(0, "#00000077");
-  shadow_gradient.addColorStop(0.7, "#00000066");
-  shadow_gradient.addColorStop(1, "#00000000");
+  shadow_gradient.addColorStop(0, "#0033");
+  shadow_gradient.addColorStop(0.7, "#0036");
+  shadow_gradient.addColorStop(1, "#0030");
 
   ctx.globalCompositeOperation = "darken";
   ctx.beginPath();
