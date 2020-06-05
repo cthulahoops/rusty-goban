@@ -56,13 +56,3 @@ impl JsBoard {
     }
   }
 }
-
-#[wasm_bindgen]
-extern {
-    fn alert(s: &str);
-}
-
-#[wasm_bindgen]
-pub fn yell() {
-    alert("Hello, rusty-goban!");
-}
