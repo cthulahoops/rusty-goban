@@ -64,6 +64,21 @@ const drawGrid = () => {
 };
 
 
+const drawHighlight = (x, y) => {
+  ctx.beginPath();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#f00"; 
+  ctx.arc(
+    cell_transform(x) + 1, 
+    cell_transform(y) + 1, 
+    STONE_SIZE*0.40,
+    0,
+    2*Math.PI,
+    false);
+  ctx.stroke();
+  ctx.lineWidth = 1;
+}
+
 const drawDot = (x, y) => {
   ctx.beginPath();
   ctx.fillStyle = GRID_COLOR; 
@@ -140,6 +155,10 @@ const drawBoard = () => {
   drawGrid();
   drawStarPoints();
   board.draw_stones(drawStone);
+  var last_move = board.get_last_move();
+  if (last_move) {
+    drawHighlight(last_move[0], last_move[1]);
+  }
 }
 
 drawBoard();

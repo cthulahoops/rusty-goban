@@ -15,6 +15,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub struct JsBoard {
     board: Board,
     pub size: i32,
+    last_move: Option<(i32, i32)>,
 }
 
 impl Stone {
@@ -34,6 +35,14 @@ impl JsBoard {
         JsBoard {
             board: Board::new(size),
             size: size,
+            last_move: None,
+        }
+    }
+
+    pub fn get_last_move(&self) -> Vec<i32> {
+        match self.last_move {
+            Some((x, y)) => vec![x, y],
+            None => vec![],
         }
     }
 
@@ -42,9 +51,15 @@ impl JsBoard {
     }
 
     pub fn play_stone(&mut self, x: i32, y: i32) -> Result<(), JsValue> {
-        self.board
-            .play_stone(Position { x, y })
-            .map_err(JsValue::from)
+        match self.board.play_stone(Position { x, y }) {
+            Ok(()) => {
+                self.last_move = Some((x, y));
+                Ok(())
+            }
+            Err(error) => {
+                return Err(JsValue::from(error));
+            }
+        }
     }
 
     pub fn draw_stones(&self, f: &js_sys::Function) -> () {
