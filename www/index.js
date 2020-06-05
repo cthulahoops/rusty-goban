@@ -8,9 +8,7 @@ const BLACK = "#000000";
 
 const board_size = 19;
 
-let board = wasm.Board.new(board_size);
-console.log(board.size);
-console.log(board.get_position());
+let board = wasm.JsBoard.new(board_size);
 
 const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)
@@ -29,14 +27,14 @@ const ctx = canvas.getContext('2d');
 
 const doMouseMove = (e) => {
   drawBoard();
-  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player_js() + "aa");
+  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player());
 }
 
 const doMouseDown = (e) => {
   const x = uncell_transform(e.offsetX);
   const y = uncell_transform(e.offsetY);
   console.log("Placed at: ", x, y);
-  board.play_stone_js(x, y);
+  board.play_stone(x, y);
 }
 
 canvas.addEventListener("mousemove", doMouseMove);
@@ -120,7 +118,7 @@ const drawStone = (x, y, color) => {
 const drawBoard = () => {
   drawGrid();
   drawStarPoints();
-  board.draw_js_board(drawStone);
+  board.draw_stones(drawStone);
 }
 
 drawBoard();

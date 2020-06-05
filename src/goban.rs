@@ -5,12 +5,7 @@ extern crate js_sys;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::io::{stdin,stdout,Write};
 
-use wasm_bindgen::prelude::*;
-
-
-#[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stone {
     Black,
@@ -19,21 +14,18 @@ pub enum Stone {
 
 use Stone::*;
 
-#[wasm_bindgen]
 #[derive(PartialEq, Hash, Eq, Debug, Clone, Copy)]
 pub struct Position {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
-#[wasm_bindgen]
 pub struct Board {
-  map: HashMap<Position, Stone>,
+  pub map: HashMap<Position, Stone>,
   pub size: i32,
   pub next_player: Stone
 }
 
-#[wasm_bindgen]
 impl Board {
   pub fn new(size : i32) -> Self {
     Board {
@@ -84,19 +76,7 @@ impl Board {
     }
   }
 
-  pub fn next_player_js(&self) -> JsValue {
-    let color = match self.next_player {
-      White => "#FFFFFF",
-      Black => "#000000",
-    };
-    JsValue::from(color)
-  }
-
-  pub fn play_stone_js(&mut self, x : i32, y: i32) -> Result<(), JsValue> {
-    self.play_stone(Position { x, y }).map_err(JsValue::from)
-  }
-
-  fn play_stone(&mut self, position : Position) -> Result<(), String> {
+  pub fn play_stone(&mut self, position : Position) -> Result<(), String> {
     let stone = self.next_player;
       // Check for ko!
 
@@ -127,21 +107,6 @@ impl Board {
 
       self.next_player = other_player(self.next_player);
       Ok(())
-  }
-
-  pub fn draw_js_board(&self, f : &js_sys::Function) -> () {
-    for (key, val) in self.map.iter() {
-      let this = JsValue::NULL;
-      let color = match val {
-        White => "#FFFFFF",
-        Black => "#000000",
-      };
-      f.call3(
-        &this, 
-        &JsValue::from(key.x), 
-        &JsValue::from(key.y), 
-        &JsValue::from(color)).unwrap();
-    }
   }
 
   fn is_on_board(&self, pos: &Position) -> bool {
