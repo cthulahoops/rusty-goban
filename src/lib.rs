@@ -1,8 +1,9 @@
-mod utils;
 mod goban;
+mod utils;
 
+use goban::{Board, Position, Stone};
+use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
-use goban::Board;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -11,11 +12,66 @@ use goban::Board;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+pub struct JsBoard {
+    board: Board,
+    pub size: i32,
+    last_move: Option<(i32, i32)>,
 }
 
+impl Stone {
+    pub fn to_str(&self) -> &str {
+        match &self {
+            Stone::White => "white",
+            Stone::Black => "black",
+        }
+    }
+}
+
+// Javascript specific methods for the board.
 #[wasm_bindgen]
-pub fn yell() {
-    alert("Hello, rusty-goban!");
+impl JsBoard {
+    pub fn new(size: i32) -> Self {
+        set_panic_hook();
+        JsBoard {
+            board: Board::new(size),
+            size: size,
+            last_move: None,
+        }
+    }
+
+    pub fn get_last_move(&self) -> Vec<i32> {
+        match self.last_move {
+            Some((x, y)) => vec![x, y],
+            None => vec![],
+        }
+    }
+
+    pub fn next_player(&self) -> JsValue {
+        JsValue::from(self.board.next_player.to_str())
+    }
+
+    pub fn play_stone(&mut self, x: i32, y: i32) -> Result<(), JsValue> {
+        match self.board.play_stone(Position { x, y }) {
+            Ok(()) => {
+                self.last_move = Some((x, y));
+                Ok(())
+            }
+            Err(error) => {
+                return Err(JsValue::from(error));
+            }
+        }
+    }
+
+    pub fn draw_stones(&self, f: &js_sys::Function) -> () {
+        for (position, stone) in self.board.map.iter() {
+            let this = JsValue::NULL;
+            f.call3(
+                &this,
+                &JsValue::from(position.x),
+                &JsValue::from(position.y),
+                &JsValue::from(stone.to_str()),
+            )
+            .unwrap();
+        }
+    }
 }

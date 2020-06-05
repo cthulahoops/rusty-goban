@@ -1,6 +1,8 @@
 import * as wasm from "wasm-game-of-life";
 
 const CELL_SIZE = 35; // px
+const STONE_SIZE = CELL_SIZE * 0.45;
+
 const BOARD_COLOR = "#ddb34e";
 const GRID_COLOR = "#333333";
 const WHITE = "#FFFFFF";
@@ -8,9 +10,7 @@ const BLACK = "#000000";
 
 const board_size = 19;
 
-let board = wasm.Board.new(board_size);
-console.log(board.size);
-console.log(board.get_position());
+let board = wasm.JsBoard.new(board_size);
 
 const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)
@@ -26,17 +26,16 @@ canvas.width = cell_transform(board_size + 1);
 
 const ctx = canvas.getContext('2d');
 
-
 const doMouseMove = (e) => {
   drawBoard();
-  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player_js() + "aa");
+  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player());
 }
 
 const doMouseDown = (e) => {
   const x = uncell_transform(e.offsetX);
   const y = uncell_transform(e.offsetY);
   console.log("Placed at: ", x, y);
-  board.play_stone_js(x, y);
+  board.play_stone(x, y);
 }
 
 canvas.addEventListener("mousemove", doMouseMove);
@@ -64,6 +63,21 @@ const drawGrid = () => {
   ctx.stroke();
 };
 
+
+const drawHighlight = (x, y) => {
+  ctx.beginPath();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#f00"; 
+  ctx.arc(
+    cell_transform(x) + 1, 
+    cell_transform(y) + 1, 
+    STONE_SIZE*0.40,
+    0,
+    2*Math.PI,
+    false);
+  ctx.stroke();
+  ctx.lineWidth = 1;
+}
 
 const drawDot = (x, y) => {
   ctx.beginPath();
@@ -105,22 +119,46 @@ const drawStarPoints = () => {
 };
 
 const drawStone = (x, y, color) => {
+  const x_pos = cell_transform(x) + 1; 
+  const y_pos = cell_transform(y) + 1;
+
+  const x_shad = x_pos + STONE_SIZE * 0.2;
+  const y_shad = y_pos + STONE_SIZE * 0.2;
+
+  var shadow_gradient = ctx.createRadialGradient(x_shad, y_shad, 0, x_shad, y_shad, 1.1 * STONE_SIZE);
+  shadow_gradient.addColorStop(0, "#0033");
+  shadow_gradient.addColorStop(0.7, "#0036");
+  shadow_gradient.addColorStop(1, "#0030");
+
+  ctx.globalCompositeOperation = "darken";
   ctx.beginPath();
-  ctx.fillStyle = color;
-  ctx.arc(
-    cell_transform(x) + 1, 
-    cell_transform(y) + 1, 
-    CELL_SIZE*0.45,
-    0,
-    2*Math.PI,
-    false);
+  ctx.arc(x_shad, y_shad, STONE_SIZE * 1.05, 0, 2 * Math.PI, false);
+  ctx.fillStyle = shadow_gradient;
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+
+  var stone_gradient = ctx.createRadialGradient(x_pos - STONE_SIZE * 0.3, y_pos - STONE_SIZE * 0.3, STONE_SIZE * 0.1, x_pos, y_pos, 2 * STONE_SIZE);
+  if (color == 'black') {
+    stone_gradient.addColorStop(0, "#333");
+    stone_gradient.addColorStop(1, "#000");
+  } else {
+    stone_gradient.addColorStop(0, "#fff");
+    stone_gradient.addColorStop(1, "#ccc");
+  }
+  ctx.beginPath();
+  ctx.fillStyle = stone_gradient;
+  ctx.arc(x_pos, y_pos, STONE_SIZE, 0, 2 * Math.PI, false);
   ctx.fill();
 }
 
 const drawBoard = () => {
   drawGrid();
   drawStarPoints();
-  board.draw_js_board(drawStone);
+  board.draw_stones(drawStone);
+  var last_move = board.get_last_move();
+  if (last_move) {
+    drawHighlight(last_move[0], last_move[1]);
+  }
 }
 
 drawBoard();
