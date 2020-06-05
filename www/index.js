@@ -1,6 +1,8 @@
 import * as wasm from "wasm-game-of-life";
 
 const CELL_SIZE = 35; // px
+const STONE_SIZE = CELL_SIZE * 0.45;
+
 const BOARD_COLOR = "#ddb34e";
 const GRID_COLOR = "#333333";
 const WHITE = "#FFFFFF";
@@ -23,7 +25,6 @@ canvas.height = cell_transform(board_size + 1);
 canvas.width = cell_transform(board_size + 1);
 
 const ctx = canvas.getContext('2d');
-
 
 const doMouseMove = (e) => {
   drawBoard();
@@ -103,15 +104,35 @@ const drawStarPoints = () => {
 };
 
 const drawStone = (x, y, color) => {
+  const x_pos = cell_transform(x) + 1; 
+  const y_pos = cell_transform(y) + 1;
+
+  const x_shad = x_pos + STONE_SIZE * 0.2;
+  const y_shad = y_pos + STONE_SIZE * 0.2;
+
+  var shadow_gradient = ctx.createRadialGradient(x_shad, y_shad, 0, x_shad, y_shad, 1.1 * STONE_SIZE);
+  shadow_gradient.addColorStop(0, "#00000077");
+  shadow_gradient.addColorStop(0.7, "#00000066");
+  shadow_gradient.addColorStop(1, "#00000000");
+
+  ctx.globalCompositeOperation = "darken";
   ctx.beginPath();
-  ctx.fillStyle = color;
-  ctx.arc(
-    cell_transform(x) + 1, 
-    cell_transform(y) + 1, 
-    CELL_SIZE*0.45,
-    0,
-    2*Math.PI,
-    false);
+  ctx.arc(x_shad, y_shad, STONE_SIZE * 1.05, 0, 2 * Math.PI, false);
+  ctx.fillStyle = shadow_gradient;
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+
+  var stone_gradient = ctx.createRadialGradient(x_pos - STONE_SIZE * 0.3, y_pos - STONE_SIZE * 0.3, STONE_SIZE * 0.1, x_pos, y_pos, 2 * STONE_SIZE);
+  if (color == 'black') {
+    stone_gradient.addColorStop(0, "#333");
+    stone_gradient.addColorStop(1, "#000");
+  } else {
+    stone_gradient.addColorStop(0, "#fff");
+    stone_gradient.addColorStop(1, "#ccc");
+  }
+  ctx.beginPath();
+  ctx.fillStyle = stone_gradient;
+  ctx.arc(x_pos, y_pos, STONE_SIZE, 0, 2 * Math.PI, false);
   ctx.fill();
 }
 
