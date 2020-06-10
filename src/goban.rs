@@ -3,7 +3,7 @@
 // 4. skip user input
 extern crate js_sys;
 
-use std::collections::HashMap;
+use im::HashMap;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +32,14 @@ impl Board {
             map: HashMap::new(),
             size,
             next_player: Black,
+        }
+    }
+
+    pub fn clone(&self) -> Self {
+        Self {
+            map: self.map.clone(),
+            size: self.size,
+            next_player: self.next_player
         }
     }
 

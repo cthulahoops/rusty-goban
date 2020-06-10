@@ -50,11 +50,11 @@ impl JsBoard {
         JsValue::from(self.board.next_player.to_str())
     }
 
-    pub fn play_stone(&mut self, x: i32, y: i32) -> Result<(), JsValue> {
-        match self.board.play_stone(Position { x, y }) {
+    pub fn play_stone(&self, x: i32, y: i32) -> Result<JsBoard, JsValue> {
+        let mut new_board = self.board.clone();
+        match new_board.play_stone(Position { x, y }) {
             Ok(()) => {
-                self.last_move = Some((x, y));
-                Ok(())
+                Ok(JsBoard { board: new_board, size: self.size, last_move: Some((x, y))})
             }
             Err(error) => {
                 return Err(JsValue::from(error));
