@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "boardgame.io": "^0.39.12",
+    "esm": "^3.2.25",
+    "redux": "^4.0.5",
+    "redux-logger": "^3.0.6",
+    "wasm-game-of-life": "file:../nodepkg/"
+  },
+  "scripts": {
+    "serve": "node -r esm index.js"
+  },
+  "keywords": [
+    "webassembly",
+    "wasm",
+    "rust",
+    "webpack"
+  ],
+  "author": "Ashley Williams <ashley666ashley@gmail.com>",
+  "license": "(MIT OR Apache-2.0)",
+  "bugs": {
+    "url": "https://github.com/rustwasm/create-wasm-app/issues"
+  },
+  "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
+  "devDependencies": {}
+}

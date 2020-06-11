@@ -9,7 +9,8 @@
   "dependencies": {
     "boardgame.io": "^0.39.12",
     "esm": "^3.2.25",
-    "wasm-game-of-life": "file:../pkg"
+    "socket.io": "^2.3.0",
+    "wasm-game-of-life": "file:../pkg/"
   },
   "scripts": {
     "build": "webpack --config webpack.config.js",

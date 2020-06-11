@@ -1,6 +1,6 @@
 
 import { Client } from 'boardgame.io/client';
-import { Local } from 'boardgame.io/multiplayer';
+import { Local, SocketIO } from 'boardgame.io/multiplayer';
 import { GoBoard, board_size } from "./Game";
 
 const CELL_SIZE = 35; // px
