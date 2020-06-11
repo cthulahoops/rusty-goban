@@ -156,7 +156,7 @@ class GoApp {
   constructor(canvas, { playerID } = {}) {
     this.client = Client({
       game: GoBoard,
-      multiplayer: SocketIO({ server: 'localhost:8000' }),
+      multiplayer: Local(), //  SocketIO({ server: 'localhost:8000' }),
       playerID
     });
     this.client.start();
