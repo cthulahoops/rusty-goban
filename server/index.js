@@ -1,10 +1,23 @@
-const { GoBoard } = require('./Game');
-const Server = require('boardgame.io/server').Server;
-import logger from 'redux-logger';
-import { applyMiddleware } from 'redux';
+var app = require('express')();
+var http = require('http').createServer(app);
+var io = require('socket.io')(http);
 
-const server = Server({ 
-  enhancer: applyMiddleware(logger),
-  games: [GoBoard] });
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
 
-server.run(8000);
+io.on('connection', (socket) => {
+    console.log('a user connected');
+
+    socket.on('disconnect', () => {
+	console.log('user disconnected');
+    });
+    socket.on('place_stone', (msg) => {
+	console.log("place_stone:", msg);
+	socket.broadcast.emit('place_stone', msg);
+    });
+});
+
+http.listen(3000, () => {
+  console.log('listening on *:3000');
+});

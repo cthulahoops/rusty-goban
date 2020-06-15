@@ -10,7 +10,7 @@ export const GoBoard = {
   },
 
   moves: {
-    playAt: (G, ctx, x, y) => {
+    playAt: (G, x, y) => {
       // G.board.play_stone(x, y);
       return { board: G.board.play_stone(x, y) };
     }
