@@ -163,6 +163,10 @@ class GoApp {
 
     this.socket = io('http://localhost:3000');
     this.socket.on('place_stone', (msg) => { this.placeStone(msg) } );
+    this.socket.on('state', (msg) => {
+      this.game = wasm.JsBoard.from_js(msg);
+      this.update();
+    })
   }
 
   placeStone(msg) {

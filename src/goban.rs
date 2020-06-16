@@ -1,12 +1,13 @@
 // 2. B or W, last play positions
 // 3. alternate stone placement
 // 4. skip user input
-extern crate js_sys;
-
 use im::HashMap;
 use std::collections::HashSet;
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Stone {
     Black,
     White,
@@ -14,13 +15,36 @@ pub enum Stone {
 
 use Stone::*;
 
-#[derive(PartialEq, Hash, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Hash, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
 }
 
+
+fn board_serialize<S>(board: &HashMap<Position, Stone>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let vec : Vec<(&Position, &Stone)> = board.into_iter().collect();
+    vec.serialize(serializer)
+}
+
+fn board_deserialize<'de, D>(deserializer: D) -> Result<HashMap<Position, Stone>, D::Error>
+where
+    D:Deserializer<'de>,
+{
+    let vec : Vec<(Position, Stone)> = Deserialize::deserialize(deserializer)?;
+    let mut hash = HashMap::new();
+    for (k, v) in vec {
+        hash.insert(k, v);
+    }
+    Ok(hash)
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Board {
+    #[serde(serialize_with="board_serialize", deserialize_with="board_deserialize")]
     pub map: HashMap<Position, Stone>,
     pub size: i32,
     pub next_player: Stone,

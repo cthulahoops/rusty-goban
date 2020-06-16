@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "boardgame.io": "^0.39.12",
     "esm": "^3.2.25",
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",

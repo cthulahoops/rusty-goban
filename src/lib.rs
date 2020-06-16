@@ -74,4 +74,18 @@ impl JsBoard {
             .unwrap();
         }
     }
+
+    pub fn to_js(&self) -> JsValue {
+        JsValue::from_serde(&self.board).unwrap()
+    }
+
+    pub fn from_js(js: &JsValue) -> Self {
+        let board : Board = JsValue::into_serde(js).unwrap();
+        let size = board.size;
+        Self {
+            board,
+            size,
+            last_move: None
+        }
+    }
 }

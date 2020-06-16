@@ -7,7 +7,6 @@
     "create-wasm-app": ".bin/create-wasm-app.js"
   },
   "dependencies": {
-    "boardgame.io": "^0.39.12",
     "esm": "^3.2.25",
     "socket.io": "^2.3.0",
     "wasm-game-of-life": "file:../pkg/"
