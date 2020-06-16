@@ -48,6 +48,7 @@ pub struct Board {
     pub map: HashMap<Position, Stone>,
     pub size: i32,
     pub next_player: Stone,
+    pub last_move: Option<Position>,
 }
 
 impl Board {
@@ -55,6 +56,7 @@ impl Board {
         Board {
             map: HashMap::new(),
             size,
+            last_move: None,
             next_player: Black,
         }
     }
@@ -63,6 +65,7 @@ impl Board {
         Self {
             map: self.map.clone(),
             size: self.size,
+            last_move: self.last_move,
             next_player: self.next_player
         }
     }
@@ -140,6 +143,7 @@ impl Board {
         }
 
         self.next_player = other_player(self.next_player);
+        self.last_move = Some(position);
         Ok(())
     }
 

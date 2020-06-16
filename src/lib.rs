@@ -14,8 +14,6 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 pub struct JsBoard {
     board: Board,
-    pub size: i32,
-    last_move: Option<(i32, i32)>,
 }
 
 impl Stone {
@@ -34,14 +32,12 @@ impl JsBoard {
         set_panic_hook();
         JsBoard {
             board: Board::new(size),
-            size: size,
-            last_move: None,
         }
     }
 
     pub fn get_last_move(&self) -> Vec<i32> {
-        match self.last_move {
-            Some((x, y)) => vec![x, y],
+        match self.board.last_move {
+            Some(Position{x, y}) => vec![x, y],
             None => vec![],
         }
     }
@@ -54,7 +50,7 @@ impl JsBoard {
         let mut new_board = self.board.clone();
         match new_board.play_stone(Position { x, y }) {
             Ok(()) => {
-                Ok(JsBoard { board: new_board, size: self.size, last_move: Some((x, y))})
+                Ok(JsBoard { board: new_board })
             }
             Err(error) => {
                 return Err(JsValue::from(error));
@@ -81,11 +77,8 @@ impl JsBoard {
 
     pub fn from_js(js: &JsValue) -> Self {
         let board : Board = JsValue::into_serde(js).unwrap();
-        let size = board.size;
         Self {
             board,
-            size,
-            last_move: None
         }
     }
 }
