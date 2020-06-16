@@ -1,4 +1,8 @@
+import io from 'socket.io-client';
+// import { Client } from 'boardgame.io/client';
+// import { Local, SocketIO } from 'boardgame.io/multiplayer';
 import * as wasm from "wasm-game-of-life";
+import { GoBoard, board_size } from "./Game";
 
 const CELL_SIZE = 35; // px
 const STONE_SIZE = CELL_SIZE * 0.45;
@@ -8,10 +12,6 @@ const GRID_COLOR = "#333333";
 const WHITE = "#FFFFFF";
 const BLACK = "#000000";
 
-const board_size = 19;
-
-let board = wasm.JsBoard.new(board_size);
-
 const cell_transform = (cell) => {
   return (cell) * (CELL_SIZE + 1)
 };
@@ -20,33 +20,20 @@ const uncell_transform = (pos) => {
   return Math.round(pos / (CELL_SIZE + 1))
 };
 
-const canvas = document.getElementById("goban");
-canvas.height = cell_transform(board_size + 1);
-canvas.width = cell_transform(board_size + 1);
+// let board = wasm.JsBoard.new(board_size);
 
-const ctx = canvas.getContext('2d');
+// const canvas = document.getElementById("goban");
+
+// const ctx = canvas.getContext('2d');
 
 const doMouseMove = (e) => {
   drawBoard();
   drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player());
 }
 
-const doMouseDown = (e) => {
-  const x = uncell_transform(e.offsetX);
-  const y = uncell_transform(e.offsetY);
-  console.log("Placed at: ", x, y);
-  board.play_stone(x, y);
-}
-
-canvas.addEventListener("mousemove", doMouseMove);
-canvas.addEventListener("mousedown", doMouseDown);
-
-const drawGrid = () => {
+const drawGrid = (ctx) => {
   ctx.beginPath();
   ctx.strokeStyle = GRID_COLOR;
-
-  ctx.fillStyle = BOARD_COLOR;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Vertical lines.
   for (let i = 1; i <= board_size; i++) {
@@ -64,7 +51,7 @@ const drawGrid = () => {
 };
 
 
-const drawHighlight = (x, y) => {
+const drawHighlight = (ctx, x, y) => {
   ctx.beginPath();
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#f00"; 
@@ -79,7 +66,7 @@ const drawHighlight = (x, y) => {
   ctx.lineWidth = 1;
 }
 
-const drawDot = (x, y) => {
+const drawDot = (ctx, x, y) => {
   ctx.beginPath();
   ctx.fillStyle = GRID_COLOR; 
   ctx.arc(
@@ -92,33 +79,33 @@ const drawDot = (x, y) => {
   ctx.fill();
 }
 
-const drawStarPoints = () => {
+const drawStarPoints = (ctx) => {
   if (board_size === 9) {
-    drawDot(3,3);
-    drawDot(5,5);
-    drawDot(7,7);
-    drawDot(3,7);
-    drawDot(7,3);
+    drawDot(ctx, 3, 3);
+    drawDot(ctx, 5, 5);
+    drawDot(ctx, 7, 7);
+    drawDot(ctx, 3, 7);
+    drawDot(ctx, 7, 3);
   } else if (board_size === 13) {
-    drawDot(4,4);
-    drawDot(4,10);
-    drawDot(10,4);
-    drawDot(10,10);
-    drawDot(7,7);
+    drawDot(ctx, 4, 4);
+    drawDot(ctx, 4, 10);
+    drawDot(ctx, 10, 4);
+    drawDot(ctx, 10, 10);
+    drawDot(ctx, 7, 7);
   } else if (board_size === 19) {
-    drawDot(4,4);
-    drawDot(4,16);
-    drawDot(16,4);
-    drawDot(16,16);
-    drawDot(10,10);
-    drawDot(10,4);
-    drawDot(4,10);
-    drawDot(16,10);
-    drawDot(10,16);
+    drawDot(ctx, 4, 4);
+    drawDot(ctx, 4, 16);
+    drawDot(ctx, 16, 4);
+    drawDot(ctx, 16, 16);
+    drawDot(ctx, 10, 10);
+    drawDot(ctx, 10, 4);
+    drawDot(ctx, 4, 10);
+    drawDot(ctx, 16, 10);
+    drawDot(ctx, 10, 16);
   }
 };
 
-const drawStone = (x, y, color) => {
+const drawStone = (ctx, x, y, color) => {
   const x_pos = cell_transform(x) + 1; 
   const y_pos = cell_transform(y) + 1;
 
@@ -151,14 +138,80 @@ const drawStone = (x, y, color) => {
   ctx.fill();
 }
 
-const drawBoard = () => {
-  drawGrid();
-  drawStarPoints();
-  board.draw_stones(drawStone);
+const drawBoard = (board, canvas) => {
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = BOARD_COLOR;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawGrid(ctx);
+  drawStarPoints(ctx);
+  board.draw_stones((x, y, color) => drawStone(ctx, x, y, color));
   var last_move = board.get_last_move();
   if (last_move) {
-    drawHighlight(last_move[0], last_move[1]);
+    drawHighlight(ctx, last_move[0], last_move[1]);
   }
 }
 
-drawBoard();
+class GoApp {
+  constructor(canvas, { playerID } = {}) {
+    this.game = wasm.JsBoard.new(board_size); 
+    this.playerID = playerID;
+    this.canvas = canvas;
+    this.attachListeners();
+    this.update();
+
+    this.socket = io('http://localhost:3000');
+    this.socket.on('place_stone', (msg) => { this.placeStone(msg) } );
+    this.socket.on('state', (msg) => {
+      this.game = wasm.JsBoard.from_js(msg);
+      this.update();
+    })
+  }
+
+  placeStone(msg) {
+    console.log("Place stone has been called:", this.playerID, msg);
+    if (msg.playerID != this.game.next_player()) {
+      console.log("Remote move out of turn - reject.");
+      return;
+    }
+    this.game = this.game.play_stone(msg.x, msg.y);
+    console.log("Uetah", this.game, this.game.next_player());
+    this.update(this.game)
+  }
+
+  attachListeners() {
+    // canvas.addEventListener("mousemove", doMouseMove);
+    this.canvas.addEventListener("mousedown", (event) => {
+      if (this.playerID != this.game.next_player()) {
+	console.log("Not your turn: ", this.playerID, this.game.next_player());
+	return;
+      }
+      const x = uncell_transform(event.offsetX);
+      const y = uncell_transform(event.offsetY);
+      console.log("Placed at: ", x, y);
+      this.game = this.game.play_stone(x, y);
+      this.socket.emit("place_stone", {
+	playerID: this.playerID,
+	x: x,
+	y: y
+      });
+      this.update(this.game);
+    });
+  }
+
+  update() {
+    drawBoard(this.game, this.canvas);
+  }
+}
+
+const playerID = location.hash.substr(1)
+  
+console.log("We are ", playerID);
+
+const appElement = document.getElementById('app');
+const canvas = document.createElement('canvas');
+appElement.append(canvas);
+canvas.height = cell_transform(board_size + 1);
+canvas.width = cell_transform(board_size + 1);
+new GoApp(canvas, { playerID: playerID });

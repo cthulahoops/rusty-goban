@@ -7,11 +7,14 @@
     "create-wasm-app": ".bin/create-wasm-app.js"
   },
   "dependencies": {
-    "wasm-game-of-life": "file:../pkg"
+    "esm": "^3.2.25",
+    "socket.io": "^2.3.0",
+    "wasm-game-of-life": "file:../pkg/"
   },
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "start": "webpack-dev-server"
+    "start": "webpack-dev-server",
+    "serve": "node -r esm server.js"
   },
   "repository": {
     "type": "git",
