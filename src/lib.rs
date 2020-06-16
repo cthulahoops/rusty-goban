@@ -42,6 +42,10 @@ impl JsBoard {
         }
     }
 
+    pub fn get_board_size(&self) -> i32 {
+        self.board.size
+    }
+
     pub fn next_player(&self) -> JsValue {
         JsValue::from(self.board.next_player.to_str())
     }

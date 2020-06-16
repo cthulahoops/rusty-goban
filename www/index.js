@@ -153,15 +153,16 @@ const drawBoard = (board, canvas) => {
   }
 }
 
+
 class GoApp {
-  constructor(canvas, { playerID } = {}) {
+  constructor(canvas, playerID, socket) {
+    this.socket = socket;
     this.game = wasm.JsBoard.new(board_size); 
     this.playerID = playerID;
     this.canvas = canvas;
     this.attachListeners();
     this.update();
 
-    this.socket = io('http://localhost:3000');
     this.socket.on('place_stone', (msg) => { this.placeStone(msg) } );
     this.socket.on('state', (msg) => {
       this.game = wasm.JsBoard.from_js(msg);
@@ -214,4 +215,34 @@ const canvas = document.createElement('canvas');
 appElement.append(canvas);
 canvas.height = cell_transform(board_size + 1);
 canvas.width = cell_transform(board_size + 1);
-new GoApp(canvas, { playerID: playerID });
+
+function create_game(game_id) {
+  let li = document.createElement("li");
+  li.setAttribute("id", game_id);
+  let a = document.createElement("a");
+  a.setAttribute("href", game_id);
+  a.appendChild(document.createTextNode(game_id));
+  li.appendChild(a);
+  return li
+}
+
+function build_lobby(socket) {
+  let lobby_el = document.getElementById('games'); 
+  const list_game = (event) => {
+    let gid = create_game(event.game_id); 
+    lobby_el.appendChild(gid);
+  };
+  socket.on('game_created', list_game);
+  let game_li = create_game("test game");
+
+  let button = document.getElementById('create_game_button');
+  button.addEventListener('click', () => {
+    let game_id = document.getElementById('new_game_id').value;
+    socket.emit('create_game', {'game_id': game_id});
+  });
+}
+let socket = io('http://localhost:3000');
+build_lobby(socket)
+//new GoApp(canvas, playerID, socket);
+
+
