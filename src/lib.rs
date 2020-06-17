@@ -37,7 +37,7 @@ impl JsBoard {
 
     pub fn get_last_move(&self) -> Vec<i32> {
         match self.board.last_move {
-            Some(Position{x, y}) => vec![x, y],
+            Some(Position { x, y }) => vec![x, y],
             None => vec![],
         }
     }
@@ -49,9 +49,7 @@ impl JsBoard {
     pub fn play_stone(&self, x: i32, y: i32) -> Result<JsBoard, JsValue> {
         let mut new_board = self.board.clone();
         match new_board.play_stone(Position { x, y }) {
-            Ok(()) => {
-                Ok(JsBoard { board: new_board })
-            }
+            Ok(()) => Ok(JsBoard { board: new_board }),
             Err(error) => {
                 return Err(JsValue::from(error));
             }
@@ -76,9 +74,7 @@ impl JsBoard {
     }
 
     pub fn from_js(js: &JsValue) -> Self {
-        let board : Board = JsValue::into_serde(js).unwrap();
-        Self {
-            board,
-        }
+        let board: Board = JsValue::into_serde(js).unwrap();
+        Self { board }
     }
 }
