@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
+var path = require('path')
 
 import * as wasm from "wasm-game-of-life";
 
@@ -10,10 +11,17 @@ var game_state = wasm.JsBoard.new(board_size);
 
 var games = {};
 
-// express.static.mime.define({'application/javascript': ['js']});
 
-app.get('/game/[a-z]+/', (req, res) => { res.sendFile('/home/akelly/coding/rusty-goban/www/dist/index.html') });
-app.use('/static', express.static('/home/akelly/coding/rusty-goban/www/dist/'))
+app.use(
+  express.static(
+    path.join(__dirname, '../www/dist'),
+    {index: "index.html"},
+  )
+);
+
+
+app.get('/game/[a-z]+/', (req, res) => { res.sendFile(path.join(__dirname, '../www/dist/index.html')) });
+
 
 io.on('connection', (socket) => {
     console.log('a user connected');
