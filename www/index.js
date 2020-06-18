@@ -216,6 +216,8 @@ appElement.append(canvas);
 canvas.height = cell_transform(board_size + 1);
 canvas.width = cell_transform(board_size + 1);
 
+console.log("Location: ", window.location.href);
+
 function create_game(game_id) {
   let li = document.createElement("li");
   li.setAttribute("id", game_id);

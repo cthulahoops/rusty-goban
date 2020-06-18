@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
@@ -9,9 +10,10 @@ var game_state = wasm.JsBoard.new(board_size);
 
 var games = {};
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
+// express.static.mime.define({'application/javascript': ['js']});
+
+app.get('/game/[a-z]+/', (req, res) => { res.sendFile('/home/akelly/coding/rusty-goban/www/dist/index.html') });
+app.use('/static', express.static('/home/akelly/coding/rusty-goban/www/dist/'))
 
 io.on('connection', (socket) => {
     console.log('a user connected');
@@ -29,12 +31,17 @@ io.on('connection', (socket) => {
     });
 
     socket.on('create_game', (msg) => {
+      // Create channel, issue redirect to /game/.../
       if ( games[msg.game_id] ) {
 	console.log("Duplicate game: ", msg.game_id);
 	return;
       }
       games[msg.game_id] = wasm.JsBoard.new(msg.board_size);
       io.emit("game_created", { game_id: msg.game_id, board_size: msg.board_size });
+    });
+
+    socket.on('join_game', (msg) => {
+      // ... Joins the channel for a game ... (as colour?)
     });
 
     console.log("state", game_state.to_js());
