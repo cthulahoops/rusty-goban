@@ -51,10 +51,10 @@ const drawGrid = (ctx) => {
 };
 
 
-const drawHighlight = (ctx, x, y) => {
+const drawHighlight = (ctx, x, y, color) => {
   ctx.beginPath();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = "#f00"; 
+  ctx.strokeStyle = color;
   ctx.arc(
     cell_transform(x) + 1, 
     cell_transform(y) + 1, 
@@ -138,7 +138,7 @@ const drawStone = (ctx, x, y, color) => {
   ctx.fill();
 }
 
-const drawBoard = (board, canvas) => {
+const drawBoard = (playerID, board, canvas) => {
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = BOARD_COLOR;
@@ -147,9 +147,16 @@ const drawBoard = (board, canvas) => {
   drawGrid(ctx);
   drawStarPoints(ctx);
   board.draw_stones((x, y, color) => drawStone(ctx, x, y, color));
-  var last_move = board.get_last_move();
+  const last_move = board.get_last_move();
   if (last_move) {
-    drawHighlight(ctx, last_move[0], last_move[1]);
+    drawHighlight(ctx, last_move[0], last_move[1], "#f00");
+  }
+
+  if (playerID == board.next_player()) {
+    const ko_restriction = board.ko_restriction(); 
+    if (ko_restriction) {
+      drawHighlight(ctx, ko_restriction[0], ko_restriction[1], "#000");
+    }
   }
 }
 
@@ -201,7 +208,7 @@ class GoApp {
   }
 
   update() {
-    drawBoard(this.game, this.canvas);
+    drawBoard(this.playerID, this.game, this.canvas);
   }
 }
 

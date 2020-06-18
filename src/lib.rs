@@ -69,6 +69,13 @@ impl JsBoard {
         }
     }
 
+    pub fn ko_restriction(&self) -> Vec<i32> {
+        match self.board.ko_restriction() {
+            Some(Position { x, y }) => vec![x, y],
+            None => vec![],
+        }
+    }
+
     pub fn to_js(&self) -> JsValue {
         JsValue::from_serde(&self.board).unwrap()
     }

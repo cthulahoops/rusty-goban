@@ -190,6 +190,20 @@ impl Board {
             .filter(|x| self.is_on_board(x))
             .collect()
     }
+
+    pub fn ko_restriction(&self) -> Option<Position> {
+        if self.last_captures.len() != 1 {
+            return None
+        }
+
+        let possible_ko_move = self.last_captures.first().unwrap().clone();
+
+        if self.clone().play_stone(possible_ko_move).is_err() {
+            Some(possible_ko_move)
+        } else {
+            None
+        }
+    }
 }
 
 fn other_player(stone: Stone) -> Stone {
