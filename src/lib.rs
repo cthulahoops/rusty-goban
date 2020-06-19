@@ -60,6 +60,11 @@ impl JsBoard {
         }
     }
 
+    pub fn pass(&self) {
+        let mut board = self.board.clone();
+        board.pass()
+    }
+
     pub fn draw_stones(&self, f: &js_sys::Function) -> () {
         for (position, stone) in self.board.map.iter() {
             let this = JsValue::NULL;

@@ -204,6 +204,12 @@ impl Board {
             None
         }
     }
+
+    pub fn pass(&mut self) {
+        self.next_player = other_player(self.next_player);
+        self.last_move = None;
+        self.last_captures = vec![];
+    }
 }
 
 fn other_player(stone: Stone) -> Stone {
