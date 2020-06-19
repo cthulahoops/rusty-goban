@@ -13,6 +13,15 @@ pub enum Stone {
 
 use Stone::*;
 
+impl Stone {
+    fn other(self) -> Self {
+        match self {
+            Black => White,
+            White => Black,
+        }
+    }
+}
+
 #[derive(PartialEq, Hash, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Position {
     pub x: i32,
@@ -39,6 +48,12 @@ where
     Ok(hash)
 }
 
+#[derive(Deserialize, Serialize, PartialEq, Clone, Copy)]
+pub enum Move {
+    PlayStone(Position),
+    Pass
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct Board {
     #[serde(
@@ -48,8 +63,9 @@ pub struct Board {
     pub map: HashMap<Position, Stone>,
     pub size: i32,
     pub next_player: Stone,
-    pub last_move: Option<Position>,
+    pub last_move: Option<Move>,
     pub last_captures: Vec<Position>,
+    pub game_over: bool,
 }
 
 impl Board {
@@ -60,6 +76,7 @@ impl Board {
             last_move: None,
             last_captures: vec![],
             next_player: Black,
+            game_over: false,
         }
     }
 
@@ -70,6 +87,7 @@ impl Board {
             last_move: self.last_move,
             last_captures: self.last_captures.clone(),
             next_player: self.next_player,
+            game_over: self.game_over,
         }
     }
 
@@ -135,7 +153,7 @@ impl Board {
 
         let mut captures = vec![];
         for adj_position in self.adjacent(position) {
-            if self.has_stone(adj_position, other_player(stone)) {
+            if self.has_stone(adj_position, stone.other()) {
                 if !self.has_liberties(adj_position) {
                     captures.append(&mut self.remove_group(adj_position));
                 }
@@ -145,7 +163,7 @@ impl Board {
         }
 
         // Ko condition: this move undoes the previous.
-        if let Some(last_move) = self.last_move {
+        if let Some(Move::PlayStone(last_move)) = self.last_move {
             if is_only(&captures, &last_move) && is_only(&self.last_captures, &position) {
                 return Err("Move forbidden due to Ko".to_string());
             }
@@ -156,9 +174,9 @@ impl Board {
             return Err("Illegal move - no liberties".to_string());
         }
 
-        self.next_player = other_player(self.next_player);
+        self.next_player = self.next_player.other();
         self.last_captures = captures;
-        self.last_move = Some(position);
+        self.last_move = Some(Move::PlayStone(position));
         Ok(())
     }
 
@@ -206,18 +224,16 @@ impl Board {
     }
 
     pub fn pass(&mut self) {
-        self.next_player = other_player(self.next_player);
-        self.last_move = None;
+        if self.last_move == Some(Move::Pass) {
+            self.game_over = true;
+        }
+
+        self.next_player = self.next_player.other();
+        self.last_move = Some(Move::Pass);
         self.last_captures = vec![];
     }
 }
 
-fn other_player(stone: Stone) -> Stone {
-    match stone {
-        Black => White,
-        White => Black,
-    }
-}
 
 fn is_only<A>(vec: &Vec<A>, element: &A) -> bool
 where
@@ -242,4 +258,16 @@ mod tests {
         board.play_stone(Position { x: 1, y: 1 }).unwrap(); // Recapture (1, 2)
         assert!(board.play_stone(Position { x: 1, y: 2 }).is_err()); // Recapture: Forbidden by Ko.
     }
+
+    #[test]
+    fn passing() {
+        let mut board = Board::new(9);
+        board.pass();
+        assert!(board.next_player == White);
+        assert!(!board.game_over);
+        board.pass();
+        assert!(board.next_player == Black);
+        assert!(board.game_over);
+    }
+
 }
