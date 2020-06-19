@@ -1,7 +1,7 @@
 mod goban;
 mod utils;
 
-use goban::{Board, Position, Stone};
+use goban::{Board, Position, Stone, Move};
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 
@@ -37,7 +37,8 @@ impl JsBoard {
 
     pub fn get_last_move(&self) -> Vec<i32> {
         match self.board.last_move {
-            Some(Position { x, y }) => vec![x, y],
+            Some(Move::PlayStone(Position { x, y })) => vec![x, y],
+            Some(Move::Pass) => vec![],
             None => vec![],
         }
     }
