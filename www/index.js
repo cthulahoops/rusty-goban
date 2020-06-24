@@ -155,22 +155,27 @@ const drawBoard = (board, canvas) => {
 
 
 class GoApp {
-  constructor(canvas, playerID, socket) {
+  constructor(canvas, game_id, playerID, state, socket) {
+    console.log("State: ", state);
     this.socket = socket;
-    this.game = wasm.JsBoard.new(board_size); 
+    this.game = wasm.JsBoard.from_js(state);
+    this.game_id = game_id;
     this.playerID = playerID;
     this.canvas = canvas;
     this.attachListeners();
     this.update();
 
-    this.socket.on('place_stone', (msg) => { this.placeStone(msg) } );
-    this.socket.on('state', (msg) => {
-      this.game = wasm.JsBoard.from_js(msg);
-      this.update();
-    })
+    this.socket.on('place_stone', (msg) => { this.remotePlaceStone(msg) } );
+    // this.socket.on('state', (msg) => {
+    //   this.game = wasm.JsBoard.from_js(msg);
+    //   this.update();
+    // })
   }
 
-  placeStone(msg) {
+  remotePlaceStone(msg) {
+    if (msg.game_id !== this.game_id) {
+      return;
+    }
     console.log("Place stone has been called:", this.playerID, msg);
     if (msg.playerID != this.game.next_player()) {
       console.log("Remote move out of turn - reject.");
@@ -190,9 +195,10 @@ class GoApp {
       }
       const x = uncell_transform(event.offsetX);
       const y = uncell_transform(event.offsetY);
-      console.log("Placed at: ", x, y);
+      console.log("Placed at: ", x, y, " game = ", this.game_id);
       this.game = this.game.play_stone(x, y);
       this.socket.emit("place_stone", {
+	game_id: this.game_id,
 	playerID: this.playerID,
 	x: x,
 	y: y
@@ -206,9 +212,23 @@ class GoApp {
   }
 }
 
-const playerID = location.hash.substr(1)
-  
-console.log("We are ", playerID);
+
+function create_id() {
+  return Math.random().toString(36).substring(7);
+}
+
+let localStorage = window.localStorage; 
+
+let uid = localStorage.getItem('goban-uid');
+if (uid === null) {
+  uid = create_id() 
+  localStorage.setItem('goban-uid', uid)
+}
+
+function get_current_game_id() {
+  let parts = window.location.href.split('/');
+  return parts.pop() || parts.pop(); // Dealing with optional slashes.
+}
 
 let socket = io('http://localhost:3000');
 const appElement = document.getElementById('app');
@@ -218,19 +238,13 @@ if (appElement !== null) {
     appElement.append(canvas);
     canvas.height = cell_transform(board_size + 1);
     canvas.width = cell_transform(board_size + 1);
-    new GoApp(canvas, playerID, socket);
-}
 
-function create_id() {
-  let r = Math.random().toString(36).substring(7);
-}
+    let game_id = get_current_game_id()
 
-localStorage = window.localStorage; 
-
-let uid = localStorage.getItem('goban-uid');
-if (uid === null) {
-  uid = create_id() 
-  localStorage.setItem('goban-uid', uid)
+    socket.on('game_joined', (msg) => {
+      new GoApp(canvas, game_id, msg.color, msg.state, socket);
+    });
+    socket.emit("join_game", {game_id: game_id, uid: uid});
 }
 
 console.log("Location: ", window.location.href);
@@ -252,9 +266,9 @@ function build_lobby(socket) {
   let button = document.getElementById('create_game_button');
   if (button !== null) {
     button.addEventListener('click', () => {
-      let game_id = create_id()
-      socket.emit('create_game', {'game_id': game_id});
+      let game_id = create_id();
       socket.on('game_created', () => {window.location.href = '/game/' + game_id});
+      socket.emit('create_game', {'game_id': game_id, board_size: 19});
     });
   }
 }
