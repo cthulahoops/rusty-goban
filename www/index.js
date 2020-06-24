@@ -2,7 +2,6 @@ import io from 'socket.io-client';
 // import { Client } from 'boardgame.io/client';
 // import { Local, SocketIO } from 'boardgame.io/multiplayer';
 import * as wasm from "wasm-game-of-life";
-import { GoBoard, board_size } from "./Game";
 
 const CELL_SIZE = 35; // px
 const STONE_SIZE = CELL_SIZE * 0.45;
@@ -26,12 +25,8 @@ const uncell_transform = (pos) => {
 
 // const ctx = canvas.getContext('2d');
 
-const doMouseMove = (e) => {
-  drawBoard();
-  drawStone(uncell_transform(e.offsetX), uncell_transform(e.offsetY), board.next_player());
-}
 
-const drawGrid = (ctx) => {
+const drawGrid = (ctx, board_size) => {
   ctx.beginPath();
   ctx.strokeStyle = GRID_COLOR;
 
@@ -76,10 +71,9 @@ const drawDot = (ctx, x, y) => {
     0,
     2*Math.PI,
     false);
-  ctx.fill();
-}
+  ctx.fill(); }
 
-const drawStarPoints = (ctx) => {
+const drawStarPoints = (ctx, board_size) => {
   if (board_size === 9) {
     drawDot(ctx, 3, 3);
     drawDot(ctx, 5, 5);
@@ -105,7 +99,8 @@ const drawStarPoints = (ctx) => {
   }
 };
 
-const drawStone = (ctx, x, y, color) => {
+const drawStone = (canvas, x, y, color) => {
+  let ctx = canvas.getContext('2d');
   const x_pos = cell_transform(x) + 1; 
   const y_pos = cell_transform(y) + 1;
 
@@ -139,14 +134,12 @@ const drawStone = (ctx, x, y, color) => {
 }
 
 const drawBoard = (board, canvas) => {
-  const ctx = canvas.getContext('2d');
-
+  let ctx = canvas.getContext('2d');
   ctx.fillStyle = BOARD_COLOR;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  drawGrid(ctx);
-  drawStarPoints(ctx);
-  board.draw_stones((x, y, color) => drawStone(ctx, x, y, color));
+  drawGrid(ctx, board.get_board_size());
+  drawStarPoints(ctx, board.get_board_size());
+  board.draw_stones((x, y, color) => drawStone(canvas, x, y, color));
   var last_move = board.get_last_move();
   if (last_move) {
     drawHighlight(ctx, last_move[0], last_move[1]);
@@ -155,12 +148,12 @@ const drawBoard = (board, canvas) => {
 
 
 class GoApp {
-  constructor(canvas, game_id, playerID, state, socket) {
+  constructor(canvas, game_id, player, state, socket) {
     console.log("State: ", state);
     this.socket = socket;
     this.game = wasm.JsBoard.from_js(state);
     this.game_id = game_id;
-    this.playerID = playerID;
+    this.player = player;
     this.canvas = canvas;
     this.attachListeners();
     this.update();
@@ -176,8 +169,8 @@ class GoApp {
     if (msg.game_id !== this.game_id) {
       return;
     }
-    console.log("Place stone has been called:", this.playerID, msg);
-    if (msg.playerID != this.game.next_player()) {
+    console.log("Place stone has been called:", this.player, msg);
+    if (msg.player != this.game.next_player()) {
       console.log("Remote move out of turn - reject.");
       return;
     }
@@ -187,10 +180,21 @@ class GoApp {
   }
 
   attachListeners() {
-    // canvas.addEventListener("mousemove", doMouseMove);
+    this.canvas.addEventListener("mousemove", (e) => {
+      if (this.player != this.game.next_player()) {
+	return
+      }
+      drawBoard(this.game, this.canvas);
+      drawStone(
+	this.canvas,
+	uncell_transform(e.offsetX), 
+	uncell_transform(e.offsetY), 
+	this.game.next_player()
+      );
+    });
     this.canvas.addEventListener("mousedown", (event) => {
-      if (this.playerID != this.game.next_player()) {
-	console.log("Not your turn: ", this.playerID, this.game.next_player());
+      if (this.player != this.game.next_player()) {
+	console.log("Not your turn: ", this.player, this.game.next_player());
 	return;
       }
       const x = uncell_transform(event.offsetX);
@@ -199,11 +203,11 @@ class GoApp {
       this.game = this.game.play_stone(x, y);
       this.socket.emit("place_stone", {
 	game_id: this.game_id,
-	playerID: this.playerID,
+	player: this.player,
 	x: x,
 	y: y
       });
-      this.update(this.game);
+      this.update();
     });
   }
 
@@ -234,32 +238,24 @@ let socket = io('http://localhost:3000');
 const appElement = document.getElementById('app');
 
 if (appElement !== null) {
-    const canvas = document.createElement('canvas');
-    appElement.append(canvas);
-    canvas.height = cell_transform(board_size + 1);
-    canvas.width = cell_transform(board_size + 1);
-
     let game_id = get_current_game_id()
 
     socket.on('game_joined', (msg) => {
+      const canvas = document.createElement('canvas');
+      appElement.append(canvas);
+      let board_size = msg.state.size;
+      canvas.height = cell_transform(board_size + 1);
+      canvas.width = cell_transform(board_size + 1);
       new GoApp(canvas, game_id, msg.color, msg.state, socket);
     });
+    socket.on('game_error', (msg) => {
+      console.log(msg.error);
+      window.location.href = '/';
+    })
     socket.emit("join_game", {game_id: game_id, uid: uid});
 }
 
 console.log("Location: ", window.location.href);
-
-
-
-function create_game(game_id) {
-  let li = document.createElement("li");
-  li.setAttribute("id", game_id);
-  let a = document.createElement("a");
-  a.setAttribute("href", game_id);
-  a.appendChild(document.createTextNode(game_id));
-  li.appendChild(a);
-  return li
-}
 
 
 function build_lobby(socket) {
@@ -267,8 +263,9 @@ function build_lobby(socket) {
   if (button !== null) {
     button.addEventListener('click', () => {
       let game_id = create_id();
+      let board_size = document.getElementById("sel_board_size").value;
       socket.on('game_created', () => {window.location.href = '/game/' + game_id});
-      socket.emit('create_game', {'game_id': game_id, board_size: 19});
+      socket.emit('create_game', {'game_id': game_id, board_size: board_size});
     });
   }
 }
