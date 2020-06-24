@@ -210,13 +210,32 @@ const playerID = location.hash.substr(1)
   
 console.log("We are ", playerID);
 
+let socket = io('http://localhost:3000');
 const appElement = document.getElementById('app');
-const canvas = document.createElement('canvas');
-appElement.append(canvas);
-canvas.height = cell_transform(board_size + 1);
-canvas.width = cell_transform(board_size + 1);
+
+if (appElement !== null) {
+    const canvas = document.createElement('canvas');
+    appElement.append(canvas);
+    canvas.height = cell_transform(board_size + 1);
+    canvas.width = cell_transform(board_size + 1);
+    new GoApp(canvas, playerID, socket);
+}
+
+function create_id() {
+  let r = Math.random().toString(36).substring(7);
+}
+
+localStorage = window.localStorage; 
+
+let uid = localStorage.getItem('goban-uid');
+if (uid === null) {
+  uid = create_id() 
+  localStorage.setItem('goban-uid', uid)
+}
 
 console.log("Location: ", window.location.href);
+
+
 
 function create_game(game_id) {
   let li = document.createElement("li");
@@ -228,23 +247,15 @@ function create_game(game_id) {
   return li
 }
 
+
 function build_lobby(socket) {
-  let lobby_el = document.getElementById('games'); 
-  const list_game = (event) => {
-    let gid = create_game(event.game_id); 
-    lobby_el.appendChild(gid);
-  };
-  socket.on('game_created', list_game);
-  let game_li = create_game("test game");
-
   let button = document.getElementById('create_game_button');
-  button.addEventListener('click', () => {
-    let game_id = document.getElementById('new_game_id').value;
-    socket.emit('create_game', {'game_id': game_id});
-  });
+  if (button !== null) {
+    button.addEventListener('click', () => {
+      let game_id = create_id()
+      socket.emit('create_game', {'game_id': game_id});
+      socket.on('game_created', () => {window.location.href = '/game/' + game_id});
+    });
+  }
 }
-let socket = io('http://localhost:3000');
 build_lobby(socket)
-//new GoApp(canvas, playerID, socket);
-
-

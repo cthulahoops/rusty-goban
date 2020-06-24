@@ -20,7 +20,7 @@ app.use(
 );
 
 
-app.get('/game/[a-z]+/', (req, res) => { res.sendFile(path.join(__dirname, '../www/dist/index.html')) });
+app.get('/game/[a-z]+/', (req, res) => { res.sendFile(path.join(__dirname, '../www/dist/game.html')) });
 
 
 io.on('connection', (socket) => {
@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
 	return;
       }
       games[msg.game_id] = wasm.JsBoard.new(msg.board_size);
-      io.emit("game_created", { game_id: msg.game_id, board_size: msg.board_size });
+      socket.emit("game_created", { game_id: msg.game_id, board_size: msg.board_size });
     });
 
     socket.on('join_game', (msg) => {
