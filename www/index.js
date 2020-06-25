@@ -146,11 +146,9 @@ const drawBoard = (player, board, canvas) => {
     drawHighlight(ctx, last_move[0], last_move[1], "#f00");
   }
 
-  if (player == board.next_player()) {
-    const ko_restriction = board.ko_restriction(); 
-    if (ko_restriction) {
-      drawHighlight(ctx, ko_restriction[0], ko_restriction[1], "#000");
-    }
+  const ko_restriction = board.ko_restriction();
+  if (ko_restriction) {
+    drawHighlight(ctx, ko_restriction[0], ko_restriction[1], "#000");
   }
 }
 
@@ -164,7 +162,7 @@ class GoApp {
     this.player = player;
     this.canvas = canvas;
     this.attachListeners();
-    this.update();
+    this.draw();
 
     this.socket.on('place_stone', (msg) => { this.remotePlaceStone(msg) } );
     // this.socket.on('state', (msg) => {
@@ -183,7 +181,6 @@ class GoApp {
       return;
     }
     this.game = this.game.play_stone(msg.x, msg.y);
-    console.log("Uetah", this.game, this.game.next_player());
     this.update(this.game)
   }
 
@@ -192,14 +189,19 @@ class GoApp {
       if (this.player != this.game.next_player()) {
 	return
       }
-      drawBoard(this.player, this.game, this.canvas);
+      this.draw();
       drawStone(
 	this.canvas,
-	uncell_transform(e.offsetX), 
-	uncell_transform(e.offsetY), 
+	uncell_transform(e.offsetX),
+	uncell_transform(e.offsetY),
 	this.game.next_player()
       );
     });
+
+    this.canvas.addEventListener("mouseout", (e) => {
+      this.draw();
+    });
+
     this.canvas.addEventListener("mousedown", (event) => {
       if (this.player != this.game.next_player()) {
 	console.log("Not your turn: ", this.player, this.game.next_player());
@@ -215,11 +217,11 @@ class GoApp {
 	x: x,
 	y: y
       });
-      this.update();
+      this.draw();
     });
   }
 
-  update() {
+  draw() {
     drawBoard(this.player, this.game, this.canvas);
   }
 }
