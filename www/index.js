@@ -51,8 +51,8 @@ const drawHighlight = (ctx, x, y, color) => {
   ctx.lineWidth = 2;
   ctx.strokeStyle = color;
   ctx.arc(
-    cell_transform(x) + 1, 
-    cell_transform(y) + 1, 
+    cell_transform(x) + 1,
+    cell_transform(y) + 1,
     STONE_SIZE*0.40,
     0,
     2*Math.PI,
@@ -63,10 +63,10 @@ const drawHighlight = (ctx, x, y, color) => {
 
 const drawDot = (ctx, x, y) => {
   ctx.beginPath();
-  ctx.fillStyle = GRID_COLOR; 
+  ctx.fillStyle = GRID_COLOR;
   ctx.arc(
-    cell_transform(x) + 1, 
-    cell_transform(y) + 1, 
+    cell_transform(x) + 1,
+    cell_transform(y) + 1,
     CELL_SIZE*0.10,
     0,
     2*Math.PI,
@@ -101,7 +101,7 @@ const drawStarPoints = (ctx, board_size) => {
 
 const drawStone = (canvas, x, y, color) => {
   let ctx = canvas.getContext('2d');
-  const x_pos = cell_transform(x) + 1; 
+  const x_pos = cell_transform(x) + 1;
   const y_pos = cell_transform(y) + 1;
 
   const x_shad = x_pos + STONE_SIZE * 0.2;
@@ -229,11 +229,11 @@ function create_id() {
   return Math.random().toString(36).substring(7);
 }
 
-let localStorage = window.localStorage; 
+let localStorage = window.localStorage;
 
 let uid = localStorage.getItem('goban-uid');
 if (uid === null) {
-  uid = create_id() 
+  uid = create_id()
   localStorage.setItem('goban-uid', uid)
 }
 
