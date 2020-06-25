@@ -46,10 +46,10 @@ const drawGrid = (ctx, board_size) => {
 };
 
 
-const drawHighlight = (ctx, x, y) => {
+const drawHighlight = (ctx, x, y, color) => {
   ctx.beginPath();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = "#f00"; 
+  ctx.strokeStyle = color;
   ctx.arc(
     cell_transform(x) + 1, 
     cell_transform(y) + 1, 
@@ -133,16 +133,24 @@ const drawStone = (canvas, x, y, color) => {
   ctx.fill();
 }
 
-const drawBoard = (board, canvas) => {
+const drawBoard = (player, board, canvas) => {
   let ctx = canvas.getContext('2d');
   ctx.fillStyle = BOARD_COLOR;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid(ctx, board.get_board_size());
   drawStarPoints(ctx, board.get_board_size());
   board.draw_stones((x, y, color) => drawStone(canvas, x, y, color));
+
   var last_move = board.get_last_move();
   if (last_move) {
-    drawHighlight(ctx, last_move[0], last_move[1]);
+    drawHighlight(ctx, last_move[0], last_move[1], "#f00");
+  }
+
+  if (player == board.next_player()) {
+    const ko_restriction = board.ko_restriction(); 
+    if (ko_restriction) {
+      drawHighlight(ctx, ko_restriction[0], ko_restriction[1], "#000");
+    }
   }
 }
 
@@ -184,7 +192,7 @@ class GoApp {
       if (this.player != this.game.next_player()) {
 	return
       }
-      drawBoard(this.game, this.canvas);
+      drawBoard(this.player, this.game, this.canvas);
       drawStone(
 	this.canvas,
 	uncell_transform(e.offsetX), 
@@ -212,7 +220,7 @@ class GoApp {
   }
 
   update() {
-    drawBoard(this.game, this.canvas);
+    drawBoard(this.player, this.game, this.canvas);
   }
 }
 

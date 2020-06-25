@@ -2,10 +2,8 @@
 // 3. alternate stone placement
 // 4. skip user input
 use im::HashMap;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashSet;
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
-
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Stone {
@@ -15,26 +13,34 @@ pub enum Stone {
 
 use Stone::*;
 
+impl Stone {
+    fn other(self) -> Self {
+        match self {
+            Black => White,
+            White => Black,
+        }
+    }
+}
+
 #[derive(PartialEq, Hash, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
 }
 
-
 fn board_serialize<S>(board: &HashMap<Position, Stone>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let vec : Vec<(&Position, &Stone)> = board.into_iter().collect();
+    let vec: Vec<(&Position, &Stone)> = board.into_iter().collect();
     vec.serialize(serializer)
 }
 
 fn board_deserialize<'de, D>(deserializer: D) -> Result<HashMap<Position, Stone>, D::Error>
 where
-    D:Deserializer<'de>,
+    D: Deserializer<'de>,
 {
-    let vec : Vec<(Position, Stone)> = Deserialize::deserialize(deserializer)?;
+    let vec: Vec<(Position, Stone)> = Deserialize::deserialize(deserializer)?;
     let mut hash = HashMap::new();
     for (k, v) in vec {
         hash.insert(k, v);
@@ -42,13 +48,24 @@ where
     Ok(hash)
 }
 
+#[derive(Deserialize, Serialize, PartialEq, Clone, Copy)]
+pub enum Move {
+    PlayStone(Position),
+    Pass
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct Board {
-    #[serde(serialize_with="board_serialize", deserialize_with="board_deserialize")]
+    #[serde(
+        serialize_with = "board_serialize",
+        deserialize_with = "board_deserialize"
+    )]
     pub map: HashMap<Position, Stone>,
     pub size: i32,
     pub next_player: Stone,
-    pub last_move: Option<Position>,
+    pub last_move: Option<Move>,
+    pub last_captures: Vec<Position>,
+    pub game_over: bool,
 }
 
 impl Board {
@@ -57,7 +74,9 @@ impl Board {
             map: HashMap::new(),
             size,
             last_move: None,
+            last_captures: vec![],
             next_player: Black,
+            game_over: false,
         }
     }
 
@@ -66,7 +85,9 @@ impl Board {
             map: self.map.clone(),
             size: self.size,
             last_move: self.last_move,
-            next_player: self.next_player
+            last_captures: self.last_captures.clone(),
+            next_player: self.next_player,
+            game_over: self.game_over,
         }
     }
 
@@ -104,13 +125,16 @@ impl Board {
         false
     }
 
-    fn remove_group(&mut self, position: Position) -> () {
+    fn remove_group(&mut self, position: Position) -> Vec<Position> {
+        let mut result = vec![position];
         let origin_stone = self.map.remove(&position).unwrap();
         for adj_position in self.adjacent(position) {
             if self.has_stone(adj_position, origin_stone) {
-                self.remove_group(adj_position);
+                let mut captures = self.remove_group(adj_position);
+                result.append(&mut captures);
             }
         }
+        result
     }
 
     pub fn play_stone(&mut self, position: Position) -> Result<(), String> {
@@ -127,23 +151,32 @@ impl Board {
 
         self.map.insert(position, stone);
 
+        let mut captures = vec![];
         for adj_position in self.adjacent(position) {
-            if self.has_stone(adj_position, other_player(stone)) {
-                println!("{:?}", adj_position);
+            if self.has_stone(adj_position, stone.other()) {
                 if !self.has_liberties(adj_position) {
-                    self.remove_group(adj_position);
+                    captures.append(&mut self.remove_group(adj_position));
                 }
             } else {
                 continue;
             }
         }
+
+        // Ko condition: this move undoes the previous.
+        if let Some(Move::PlayStone(last_move)) = self.last_move {
+            if is_only(&captures, &last_move) && is_only(&self.last_captures, &position) {
+                return Err("Move forbidden due to Ko".to_string());
+            }
+        }
+
         if !self.has_liberties(position) {
             self.map.remove(&position);
             return Err("Illegal move - no liberties".to_string());
         }
 
-        self.next_player = other_player(self.next_player);
-        self.last_move = Some(position);
+        self.next_player = self.next_player.other();
+        self.last_captures = captures;
+        self.last_move = Some(Move::PlayStone(position));
         Ok(())
     }
 
@@ -175,11 +208,66 @@ impl Board {
             .filter(|x| self.is_on_board(x))
             .collect()
     }
+
+    pub fn ko_restriction(&self) -> Option<Position> {
+        if self.last_captures.len() != 1 {
+            return None
+        }
+
+        let possible_ko_move = self.last_captures.first().unwrap().clone();
+
+        if self.clone().play_stone(possible_ko_move).is_err() {
+            Some(possible_ko_move)
+        } else {
+            None
+        }
+    }
+
+    pub fn pass(&mut self) {
+        if self.last_move == Some(Move::Pass) {
+            self.game_over = true;
+        }
+
+        self.next_player = self.next_player.other();
+        self.last_move = Some(Move::Pass);
+        self.last_captures = vec![];
+    }
 }
 
-fn other_player(stone: Stone) -> Stone {
-    match stone {
-        Black => White,
-        White => Black,
+
+fn is_only<A>(vec: &Vec<A>, element: &A) -> bool
+where
+    A: Eq,
+{
+    vec.len() == 1 && vec.first().unwrap() == element
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ko() {
+        let mut board = Board::new(9);
+        board.play_stone(Position { x: 1, y: 1 }).unwrap(); // black
+        board.play_stone(Position { x: 2, y: 1 }).unwrap(); // white
+        board.play_stone(Position { x: 2, y: 2 }).unwrap(); // black
+        board.play_stone(Position { x: 1, y: 2 }).unwrap(); // white (captures corner stone)
+        board.play_stone(Position { x: 1, y: 3 }).unwrap(); // black
+        board.play_stone(Position { x: 8, y: 8 }).unwrap(); // White tenuki
+        board.play_stone(Position { x: 1, y: 1 }).unwrap(); // Recapture (1, 2)
+        assert!(board.play_stone(Position { x: 1, y: 2 }).is_err()); // Recapture: Forbidden by Ko.
     }
+
+    #[test]
+    fn passing() {
+        let mut board = Board::new(9);
+        board.pass();
+        assert!(board.next_player == White);
+        assert!(!board.game_over);
+        board.pass();
+        assert!(board.next_player == Black);
+        assert!(board.game_over);
+    }
+
 }

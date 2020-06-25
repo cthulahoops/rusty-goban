@@ -1,7 +1,7 @@
 mod goban;
 mod utils;
 
-use goban::{Board, Position, Stone};
+use goban::{Board, Position, Stone, Move};
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 
@@ -37,7 +37,8 @@ impl JsBoard {
 
     pub fn get_last_move(&self) -> Vec<i32> {
         match self.board.last_move {
-            Some(Position{x, y}) => vec![x, y],
+            Some(Move::PlayStone(Position { x, y })) => vec![x, y],
+            Some(Move::Pass) => vec![],
             None => vec![],
         }
     }
@@ -53,13 +54,16 @@ impl JsBoard {
     pub fn play_stone(&self, x: i32, y: i32) -> Result<JsBoard, JsValue> {
         let mut new_board = self.board.clone();
         match new_board.play_stone(Position { x, y }) {
-            Ok(()) => {
-                Ok(JsBoard { board: new_board })
-            }
+            Ok(()) => Ok(JsBoard { board: new_board }),
             Err(error) => {
                 return Err(JsValue::from(error));
             }
         }
+    }
+
+    pub fn pass(&self) {
+        let mut board = self.board.clone();
+        board.pass()
     }
 
     pub fn draw_stones(&self, f: &js_sys::Function) -> () {
@@ -75,14 +79,19 @@ impl JsBoard {
         }
     }
 
+    pub fn ko_restriction(&self) -> Vec<i32> {
+        match self.board.ko_restriction() {
+            Some(Position { x, y }) => vec![x, y],
+            None => vec![],
+        }
+    }
+
     pub fn to_js(&self) -> JsValue {
         JsValue::from_serde(&self.board).unwrap()
     }
 
     pub fn from_js(js: &JsValue) -> Self {
-        let board : Board = JsValue::into_serde(js).unwrap();
-        Self {
-            board,
-        }
+        let board: Board = JsValue::into_serde(js).unwrap();
+        Self { board }
     }
 }

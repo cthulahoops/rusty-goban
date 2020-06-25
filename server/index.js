@@ -34,7 +34,7 @@ io.on('connection', (socket) => {
       console.log("place_stone:", msg);
       let game_state = games[msg.game_id].board;
 
-      if (msg.playerID == game_state.next_player()) {
+      if (msg.player == game_state.next_player()) {
 	games[msg.game_id].board = game_state.play_stone(msg.x, msg.y);
       }
       socket.broadcast.emit('place_stone', msg);
