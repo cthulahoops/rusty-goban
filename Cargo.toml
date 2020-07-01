@@ -1,7 +1,7 @@
 [package]
 name = "rusty-goban"
 version = "0.1.0"
-authors = ["Dylan Wilson <dylanjw@protonmail.com>"]
+authors = ["Dylan Wilson <dylanjw@protonmail.com>", "Adam Kelly <adam@cthulahoops.org>"]
 edition = "2018"
 
 [lib]
