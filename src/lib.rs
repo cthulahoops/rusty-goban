@@ -61,9 +61,10 @@ impl JsBoard {
         }
     }
 
-    pub fn pass(&self) {
-        let mut board = self.board.clone();
-        board.pass()
+    pub fn pass(&self) -> Result<JsBoard, JsValue> {
+        let mut new_board = self.board.clone();
+        new_board.pass();
+        Ok(JsBoard { board: new_board })
     }
 
     pub fn draw_stones(&self, f: &js_sys::Function) -> () {

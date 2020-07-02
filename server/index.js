@@ -30,16 +30,26 @@ io.on('connection', (socket) => {
 	console.log('user disconnected');
     });
     socket.on('place_stone', (msg) => {
-      console.log("Games = ", games);
       console.log("place_stone:", msg);
       let game_state = games[msg.game_id].board;
 
       if (msg.player == game_state.next_player()) {
 	games[msg.game_id].board = game_state.play_stone(msg.x, msg.y);
+	socket.broadcast.emit('place_stone', msg);
       }
-      socket.broadcast.emit('place_stone', msg);
       console.log(game_state.to_js());
     });
+
+    socket.on('pass', (msg) => {
+      console.log("pass: ", msg);
+      let game_state = games[msg.game_id].board;
+
+      if (msg.player == game_state.next_player()) {
+	games[msg.game_id].board = game_state.pass();
+	socket.broadcast.emit('pass', msg);
+      }
+      console.log(game_state.to_js());
+    })
 
     socket.on('create_game', (msg) => {
       // Create channel, issue redirect to /game/.../

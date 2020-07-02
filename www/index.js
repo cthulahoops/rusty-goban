@@ -154,17 +154,30 @@ const drawBoard = (player, board, canvas) => {
 
 
 class GoApp {
-  constructor(canvas, game_id, player, state, socket) {
+  constructor(appElement, game_id, player, state, socket) {
     console.log("State: ", state);
     this.socket = socket;
     this.game = wasm.JsBoard.from_js(state);
     this.game_id = game_id;
     this.player = player;
-    this.canvas = canvas;
+
+    // Canvas:
+    this.canvas = document.createElement('canvas');
+    appElement.append(this.canvas);
+    let board_size = state.size;
+    this.canvas.height = cell_transform(board_size + 1);
+    this.canvas.width = cell_transform(board_size + 1);
+
+    // Button:
+    this.passButton = document.createElement('button');
+    this.passButton.innerHTML = "Pass";
+    appElement.append(this.passButton);
+
     this.attachListeners();
     this.draw();
 
     this.socket.on('place_stone', (msg) => { this.remotePlaceStone(msg) } );
+    this.socket.on('pass', (msg) => { this.remotePass(msg) });
   }
 
   remotePlaceStone(msg) {
@@ -180,9 +193,22 @@ class GoApp {
     this.draw()
   }
 
+  remotePass(msg) {
+    if (msg.game_id !== this.game_id) {
+      return;
+    }
+    console.log("Place stone has been called:", this.player, msg);
+    if (msg.player != this.game.next_player()) {
+      console.log("Remote pass out of turn - reject.");
+      return;
+    }
+    this.game = this.game.pass();
+    this.draw();
+  }
+
   attachListeners() {
     this.canvas.addEventListener("mousemove", (e) => {
-      if (this.player != this.game.next_player()) {
+      if (!this.my_turn()) {
 	return
       }
       this.draw();
@@ -199,7 +225,7 @@ class GoApp {
     });
 
     this.canvas.addEventListener("mousedown", (event) => {
-      if (this.player != this.game.next_player()) {
+      if (!this.my_turn()) {
 	console.log("Not your turn: ", this.player, this.game.next_player());
 	return;
       }
@@ -215,10 +241,26 @@ class GoApp {
       });
       this.draw();
     });
+
+    this.passButton.addEventListener("click", (event) => {
+      if (!this.my_turn()) {
+	console.log("Not your turn: ", this.player, this.game.next_player());
+	return;
+      }
+      this.game = this.game.pass();
+      this.socket.emit("pass", {game_id: this.game_id, player: this.player});
+      this.draw();
+    });
+  }
+
+  my_turn() {
+    return this.player === this.game.next_player();
   }
 
   draw() {
     drawBoard(this.player, this.game, this.canvas);
+
+    this.passButton.disabled = !this.my_turn();
   }
 }
 
@@ -240,19 +282,15 @@ function get_current_game_id() {
   return parts.pop() || parts.pop(); // Dealing with optional slashes.
 }
 
-let socket = io(window.location.hostname);
+let socket = io(window.location.host);
 const appElement = document.getElementById('app');
 
 if (appElement !== null) {
     let game_id = get_current_game_id()
 
     socket.on('game_joined', (msg) => {
-      const canvas = document.createElement('canvas');
-      appElement.append(canvas);
-      let board_size = msg.state.size;
-      canvas.height = cell_transform(board_size + 1);
-      canvas.width = cell_transform(board_size + 1);
-      new GoApp(canvas, game_id, msg.color, msg.state, socket);
+      new GoApp(appElement, game_id, msg.color, msg.state, socket);
+
     });
     socket.on('game_error', (msg) => {
       console.log(msg.error);
