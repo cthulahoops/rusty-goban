@@ -165,10 +165,6 @@ class GoApp {
     this.draw();
 
     this.socket.on('place_stone', (msg) => { this.remotePlaceStone(msg) } );
-    // this.socket.on('state', (msg) => {
-    //   this.game = wasm.JsBoard.from_js(msg);
-    //   this.update();
-    // })
   }
 
   remotePlaceStone(msg) {
@@ -181,7 +177,7 @@ class GoApp {
       return;
     }
     this.game = this.game.play_stone(msg.x, msg.y);
-    this.update(this.game)
+    this.draw()
   }
 
   attachListeners() {
