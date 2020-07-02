@@ -154,7 +154,7 @@ const drawBoard = (player, board, canvas) => {
 
 
 class GoApp {
-  constructor(appElement, game_id, player, state, socket) {
+  constructor(game_id, player, state, socket) {
     console.log("State: ", state);
     this.socket = socket;
     this.game = wasm.JsBoard.from_js(state);
@@ -162,16 +162,13 @@ class GoApp {
     this.player = player;
 
     // Canvas:
-    this.canvas = document.createElement('canvas');
-    appElement.append(this.canvas);
+    this.canvas = document.getElementById('boardCanvas');
     let board_size = state.size;
     this.canvas.height = cell_transform(board_size + 1);
     this.canvas.width = cell_transform(board_size + 1);
 
     // Button:
-    this.passButton = document.createElement('button');
-    this.passButton.innerHTML = "Pass";
-    appElement.append(this.passButton);
+    this.passButton = document.getElementById('passButton');
 
     this.attachListeners();
     this.draw();
@@ -289,7 +286,7 @@ if (appElement !== null) {
     let game_id = get_current_game_id()
 
     socket.on('game_joined', (msg) => {
-      new GoApp(appElement, game_id, msg.color, msg.state, socket);
+      new GoApp(game_id, msg.color, msg.state, socket);
 
     });
     socket.on('game_error', (msg) => {
@@ -298,9 +295,6 @@ if (appElement !== null) {
     })
     socket.emit("join_game", {game_id: game_id, uid: uid});
 }
-
-console.log("Location: ", window.location.href);
-
 
 function build_lobby(socket) {
   let button = document.getElementById('create_game_button');
