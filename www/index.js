@@ -240,7 +240,7 @@ function get_current_game_id() {
   return parts.pop() || parts.pop(); // Dealing with optional slashes.
 }
 
-let socket = io('http://localhost:3000');
+let socket = io(window.location.hostname);
 const appElement = document.getElementById('app');
 
 if (appElement !== null) {
