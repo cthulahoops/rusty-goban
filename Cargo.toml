@@ -13,7 +13,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 js-sys = "0.3"
-im = "15.0"
+im = "15.1"
 serde = { version = "1.0.112", features = ["derive"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
